@@ -29,7 +29,7 @@
 #define BUF_SIZE (1024)
 
 
-static void echo_task(uint16_t temperature)
+static void echo_task(float temperature)
 {
 
     uart_port_t uart_num = UART_NUM_1; // Use UART1
@@ -42,8 +42,7 @@ static void echo_task(uint16_t temperature)
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,    
-        .rx_flow_ctrl_thresh = 122,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
     //Configure UART1 parameters
     uart_param_config(uart_num, &uart_config);
@@ -53,10 +52,18 @@ static void echo_task(uint16_t temperature)
     //Install UART driver (we don't need an event queue here)
     //In this example we don't even use a buffer for sending data.
     uart_driver_install(uart_num, BUF_SIZE * 2, 0, 0, NULL, 0);
-    while(1) {
-        //Write data back to UART
-        uart_write_bytes(uart_num, (const float*) temperature, sizeof(temperature));
-    }
+
+    char buffer[32]; // Enough to hold the formatted temperature string
+
+        
+    // Format the temperature as a string
+    int len = snprintf(buffer, sizeof(buffer), "%.2f", temperature);
+
+    // Write data back to UART
+    uart_write_bytes(uart_num, buffer, len);
+
+    // Add a delay to avoid spamming
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 
 
